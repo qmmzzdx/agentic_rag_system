@@ -97,11 +97,16 @@ class VectorStoreService:
         Returns:
             List[Document]: 分割后的文档块列表
         """
-        # 使用文本分割器进行分块处理
-        split_docs = self.text_splitter.split_documents(documents)
-        logger.info(
-            f"文档分块完成：原始文档数量 {len(documents)}，分块后文档数量 {len(split_docs)}")
-        return split_docs
+        try:
+            # 使用文本分割器进行分块处理
+            split_docs = self.text_splitter.split_documents(documents)
+            logger.info(
+                f"文档分块完成：原始文档数量 {len(documents)}，分块后文档数量 {len(split_docs)}")
+            return split_docs
+        except Exception as e:
+            logger.error(f"文档分块失败: {str(e)}")
+            # 如果分块失败，返回原始文档
+            return documents
 
     @error_handler()
     def create_vector_store(self, documents: List[Document]) -> Optional[FAISS]:
@@ -120,20 +125,24 @@ class VectorStoreService:
 
         logger.info(f"开始创建向量存储，原始文档数量: {len(documents)}")
 
-        # 对文档进行分块处理
-        split_documents = self.split_documents(documents)
+        try:
+            # 对文档进行分块处理
+            split_documents = self.split_documents(documents)
 
-        # 使用分块后的文档创建FAISS向量存储
-        self.vector_store = FAISS.from_documents(
-            split_documents,
-            self.embeddings
-        )
+            # 使用分块后的文档创建FAISS向量存储
+            self.vector_store = FAISS.from_documents(
+                split_documents,
+                self.embeddings
+            )
 
-        # 保存新创建的向量存储
-        self._save_vector_store(self.vector_store)
+            # 保存新创建的向量存储
+            self._save_vector_store(self.vector_store)
 
-        logger.info(f"向量存储创建成功，包含 {len(split_documents)} 个文档块")
-        return self.vector_store
+            logger.info(f"向量存储创建成功，包含 {len(split_documents)} 个文档块")
+            return self.vector_store
+        except Exception as e:
+            logger.error(f"创建向量存储失败: {str(e)}")
+            return None
 
     def _save_vector_store(self, vector_store: FAISS):
         """
