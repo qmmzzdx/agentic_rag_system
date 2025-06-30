@@ -7,6 +7,7 @@ from typing import Tuple, List
 import logging
 from utils.document_processor import DocumentProcessor
 from utils.vector_store import VectorStoreService
+from utils.chat_history import ChatHistoryManager
 from langchain.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -249,27 +250,45 @@ class UIComponents:
 
     # 5. 渲染聊天历史
     @staticmethod
-    def render_chat_history(chat_history):
+    def render_chat_history(chat_history: ChatHistoryManager):
         """
         渲染聊天历史组件
         参数:
             chat_history - 聊天历史管理器
         """
         # 处理不同消息类型
+        role_handlers = {
+            "assistant_think": UIComponents.render_assistant_think,
+            "retrieved_doc": UIComponents.render_retrieved_doc,
+        }
+
         for message in chat_history.history:
             role = message.get('role', '')
             content = message.get('content', '')
 
-            if role == "assistant_think":
-                with st.expander("💡 查看推理过程 <think> ... </think>"):
-                    st.markdown(content)
-            elif role == "retrieved_doc":
-                with st.expander(f"🔍 查看本次召回的文档块", expanded=False):
-                    if isinstance(content, list):
-                        for idx, doc in enumerate(content, 1):
-                            st.markdown(f"📄 **文档块{idx}:**\n{doc}")
-                    else:
-                        st.markdown(content)
+            # 使用字典映射处理不同角色的消息
+            handler = role_handlers.get(
+                role, lambda content: UIComponents.render_default_message(role, content))
+            handler(content)
+
+    @staticmethod
+    def render_assistant_think(content: str):
+        """渲染助手的推理过程"""
+        with st.expander("💡 查看推理过程 <think> ... </think>"):
+            st.markdown(content)
+
+    @staticmethod
+    def render_retrieved_doc(content: str):
+        """渲染召回的文档块"""
+        with st.expander(f"🔍 查看本次召回的文档块", expanded=False):
+            if isinstance(content, list):
+                for idx, doc in enumerate(content, 1):
+                    st.markdown(f"📄 **文档块{idx}:**\n{doc}")
             else:
-                with st.chat_message(role):
-                    st.write(content)
+                st.markdown(content)
+
+    @staticmethod
+    def render_default_message(role: str, content: str):
+        """渲染默认消息"""
+        with st.chat_message(role):
+            st.write(content)
