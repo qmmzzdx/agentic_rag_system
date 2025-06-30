@@ -267,9 +267,12 @@ class UIComponents:
             content = message.get('content', '')
 
             # 使用字典映射处理不同角色的消息
-            handler = role_handlers.get(
-                role, lambda content: UIComponents.render_default_message(role, content))
-            handler(content)
+            handler = role_handlers.get(role)
+            if handler:
+                handler(content)
+            else:
+                # 渲染默认消息
+                UIComponents.render_default_message(role, content)
 
     @staticmethod
     def render_assistant_think(content: str):
