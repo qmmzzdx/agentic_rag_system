@@ -191,7 +191,7 @@ class WeatherService:
 
     def _format_forecast_weather(self, forecast: Dict[str, Any], city_name: str) -> str:
         """格式化天气预报信息"""
-        result = [f"{city_name}未来3天天气预报:"]
+        result = [f"{city_name}未来天气预报:"]
 
         for cast in forecast.get("casts", []):
             date = cast.get("date")
@@ -199,12 +199,13 @@ class WeatherService:
             night_weather = cast.get("nightweather")
             day_temp = cast.get("daytemp")
             night_temp = cast.get("nighttemp")
+            day_wind = f"{cast.get('daywind')}风{cast.get('daypower')}级"
+            night_wind = f"{cast.get('nightwind')}风{cast.get('nightpower')}级"
 
             result.append(
-                f"{date}: 白天{day_weather} {day_temp}℃, "
-                f"夜间{night_weather} {night_temp}℃"
+                f"{date}: 白天{day_weather} {day_temp}℃ {day_wind}, "
+                f"夜间{night_weather} {night_temp}℃ {night_wind}"
             )
-
         return "\n".join(result)
 
 
