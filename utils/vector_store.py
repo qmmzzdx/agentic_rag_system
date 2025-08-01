@@ -1,7 +1,6 @@
 """
 向量存储服务模块 - 提供文档向量化、存储和检索功能
 """
-import logging
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 from langchain_community.vectorstores import FAISS
@@ -9,6 +8,7 @@ from langchain.schema import Document
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from utils.decorators import error_handler
+from utils.logger_manager import singleton_logger
 
 # 导入配置项
 from config.settings import (
@@ -20,10 +20,6 @@ from config.settings import (
     SEPARATORS,
     VECTOR_STORE_PATH
 )
-
-# 配置日志
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 class VectorStoreService:
@@ -79,11 +75,11 @@ class VectorStoreService:
                     model=model_name,
                     base_url=EMBEDDING_BASE_URL
                 )
-                logger.info(f"嵌入模型已更新为: {model_name}")
+                singleton_logger.info(f"嵌入模型已更新为: {model_name}")
                 return True
             return False
         except Exception as e:
-            logger.error(f"更新嵌入模型失败: {str(e)}")
+            singleton_logger.error(f"更新嵌入模型失败: {str(e)}")
             return False
 
     @error_handler()
@@ -100,11 +96,11 @@ class VectorStoreService:
         try:
             # 使用文本分割器进行分块处理
             split_docs = self.text_splitter.split_documents(documents)
-            logger.info(
+            singleton_logger.info(
                 f"文档分块完成：原始文档数量 {len(documents)}，分块后文档数量 {len(split_docs)}")
             return split_docs
         except Exception as e:
-            logger.error(f"文档分块失败: {str(e)}")
+            singleton_logger.error(f"文档分块失败: {str(e)}")
             # 如果分块失败，返回原始文档
             return documents
 
@@ -120,10 +116,10 @@ class VectorStoreService:
             Optional[FAISS]: 创建成功的FAISS实例，失败时返回None
         """
         if not documents:
-            logger.warning("没有文档可以创建向量存储")
+            singleton_logger.warning("没有文档可以创建向量存储")
             return None
 
-        logger.info(f"开始创建向量存储，原始文档数量: {len(documents)}")
+        singleton_logger.info(f"开始创建向量存储，原始文档数量: {len(documents)}")
 
         try:
             # 对文档进行分块处理
@@ -138,10 +134,10 @@ class VectorStoreService:
             # 保存新创建的向量存储
             self._save_vector_store(self.vector_store)
 
-            logger.info(f"向量存储创建成功，包含 {len(split_documents)} 个文档块")
+            singleton_logger.info(f"向量存储创建成功，包含 {len(split_documents)} 个文档块")
             return self.vector_store
         except Exception as e:
-            logger.error(f"创建向量存储失败: {str(e)}")
+            singleton_logger.error(f"创建向量存储失败: {str(e)}")
             return None
 
     def _save_vector_store(self, vector_store: FAISS):
@@ -153,9 +149,9 @@ class VectorStoreService:
         """
         try:
             vector_store.save_local(str(self.index_dir))
-            logger.info(f"向量存储已保存到: {self.index_dir}")
+            singleton_logger.info(f"向量存储已保存到: {self.index_dir}")
         except Exception as e:
-            logger.error(f"保存向量存储失败: {str(e)}")
+            singleton_logger.error(f"保存向量存储失败: {str(e)}")
 
     @error_handler()
     def load_vector_store(self) -> Optional[FAISS]:
@@ -173,11 +169,11 @@ class VectorStoreService:
                     self.embeddings,
                     allow_dangerous_deserialization=True  # 允许加载可能不安全的序列化数据
                 )
-                logger.info("向量存储加载成功")
+                singleton_logger.info("向量存储加载成功")
                 return self.vector_store
-            logger.warning("向量存储文件不存在")
+            singleton_logger.warning("向量存储文件不存在")
         except Exception as e:
-            logger.error(f"加载向量存储失败: {str(e)}")
+            singleton_logger.error(f"加载向量存储失败: {str(e)}")
         return None
 
     @error_handler()
@@ -196,7 +192,7 @@ class VectorStoreService:
         if not self.vector_store:
             self.vector_store = self.load_vector_store()
             if not self.vector_store:
-                logger.warning("向量存储未初始化")
+                singleton_logger.warning("向量存储未初始化")
                 return []
 
         try:
@@ -210,11 +206,12 @@ class VectorStoreService:
             results = [doc for doc,
                        score in docs_and_scores if score > threshold]
 
-            logger.info(f"搜索到 {len(results)} 个相关文档，相似度阈值: {threshold}")
+            singleton_logger.info(
+                f"搜索到 {len(results)} 个相关文档，相似度阈值: {threshold}")
             return results
 
         except Exception as e:
-            logger.error(f"搜索文档失败: {str(e)}")
+            singleton_logger.error(f"搜索文档失败: {str(e)}")
             return []
 
     def get_context(self, docs: List[Document]) -> str:
@@ -244,7 +241,7 @@ class VectorStoreService:
             bool: 是否成功添加
         """
         if not content:
-            logger.warning("文档内容为空，无法添加")
+            singleton_logger.warning("文档内容为空，无法添加")
             return False
 
         try:
@@ -268,12 +265,12 @@ class VectorStoreService:
             # 保存更新后的向量存储
             self._save_vector_store(self.vector_store)
 
-            logger.info(
+            singleton_logger.info(
                 f"成功添加文档，标题: {metadata.get('source', '未知') if metadata else '未知'}，分块数量: {len(split_docs)}")
             return True
 
         except Exception as e:
-            logger.error(f"添加文档失败: {str(e)}")
+            singleton_logger.error(f"添加文档失败: {str(e)}")
             return False
 
     def clear_index(self):
@@ -283,7 +280,7 @@ class VectorStoreService:
             for file in self.index_dir.glob("*"):
                 file.unlink()
             self.vector_store = None
-            logger.info("索引已清除")
+            singleton_logger.info("索引已清除")
         except Exception as e:
-            logger.error(f"清除索引失败: {str(e)}")
+            singleton_logger.error(f"清除索引失败: {str(e)}")
             raise

@@ -1,17 +1,15 @@
 """
 智能体模型类 - 封装RAG智能体的核心功能
 """
+import sys
+import importlib
 from typing import Optional, List
 from agno.agent import Agent
 from agno.models.ollama import Ollama
 from agno.tools.reasoning import ReasoningTools
 from agno.tools.function import Function
 from config.settings import DEFAULT_MODEL
-import logging
-import importlib
-import sys
-
-logger = logging.getLogger(__name__)
+from utils.logger_manager import singleton_logger
 
 
 class RAGAgent:
@@ -61,7 +59,7 @@ class RAGAgent:
             module = importlib.import_module(module_path)
             return module
         except ImportError as e:
-            logger.error(f"导入模块 {module_path} 失败: {str(e)}")
+            singleton_logger.error(f"导入模块 {module_path} 失败: {str(e)}")
             return None
         finally:
             # 恢复字节码生成设置
@@ -76,7 +74,7 @@ class RAGAgent:
         """
         tools_module = self._safe_import(self.tool_config)
         if not tools_module:
-            logger.error(f"工具配置模块 {self.tool_config} 加载失败，使用默认工具")
+            singleton_logger.error(f"工具配置模块 {self.tool_config} 加载失败，使用默认工具")
             return [ReasoningTools(add_instructions=True)]
 
         tools = []
@@ -96,7 +94,7 @@ class RAGAgent:
 
         # 添加默认的推理工具
         tools.append(ReasoningTools(add_instructions=True))
-        logger.info(f"已加载 {len(tools)} 个工具")
+        singleton_logger.info(f"已加载 {len(tools)} 个工具")
         return tools
 
     def _load_instructions(self) -> str:
@@ -108,7 +106,8 @@ class RAGAgent:
         """
         prompts_module = self._safe_import(self.instruction_template)
         if not prompts_module:
-            logger.error(f"指令模板模块 {self.instruction_template} 加载失败，使用默认指令")
+            singleton_logger.error(
+                f"指令模板模块 {self.instruction_template} 加载失败，使用默认指令")
             return """你是一个智能助手，可以回答用户的各种问题。
                     请确保对接收的内容以及需要做出的判断进行思考，
                     回答要简明、准确、有帮助。"""
@@ -130,7 +129,7 @@ class RAGAgent:
         try:
             return getattr(module, attr_name, default)
         except Exception as e:
-            logger.error(f"获取模板 {attr_name} 失败: {str(e)}")
+            singleton_logger.error(f"获取模板 {attr_name} 失败: {str(e)}")
             return default
 
     def _create_agent(self) -> Agent:
@@ -166,7 +165,7 @@ class RAGAgent:
         """
         prompts_module = self._safe_import(self.instruction_template)
         if not prompts_module:
-            logger.error("提示模板加载失败，使用默认提示")
+            singleton_logger.error("提示模板加载失败，使用默认提示")
             return f"【用户问题】\n{prompt}"
 
         if context:
@@ -202,5 +201,5 @@ class RAGAgent:
             response = self.agent.run(full_prompt)
             return response.content
         except Exception as e:
-            logger.error(f"智能体执行失败: {str(e)}")
+            singleton_logger.error(f"智能体执行失败: {str(e)}")
             return "抱歉，处理您的请求时出现问题，请稍后再试。"

@@ -1,9 +1,9 @@
 """
 天气查询工具 - 基于高德地图API实现天气查询功能
 """
-import logging
 import requests
 from typing import Dict, Any, Optional, Tuple
+from utils.logger_manager import singleton_logger
 
 # 导入配置项
 from config.settings import (
@@ -11,9 +11,6 @@ from config.settings import (
     AMAP_WEATHER_API_URL,
     AMAP_GEO_API_URL
 )
-
-# 配置日志
-logger = logging.getLogger(__name__)
 
 
 class WeatherService:
@@ -39,7 +36,7 @@ class WeatherService:
             api_key: 高德地图API密钥
         """
         self.api_key = api_key
-        logger.info("天气服务初始化成功")
+        singleton_logger.info("天气服务初始化成功")
 
     def get_city_code(self, city_name: str) -> Tuple[Optional[str], Optional[str]]:
         """
@@ -69,13 +66,13 @@ class WeatherService:
                     "district") or city_name
                 return geocode["adcode"], city
             else:
-                logger.warning(f"未找到城市: {city_name}, 响应: {data}")
+                singleton_logger.warning(f"未找到城市: {city_name}, 响应: {data}")
                 return None, None
 
         except requests.exceptions.RequestException as e:
-            logger.error(f"获取城市编码网络错误: {str(e)}")
+            singleton_logger.error(f"获取城市编码网络错误: {str(e)}")
         except Exception as e:
-            logger.error(f"获取城市编码失败: {str(e)}", exc_info=True)
+            singleton_logger.error(f"获取城市编码失败: {str(e)}", exc_info=True)
         return None, None
 
     def query_weather(self, city: str, extensions: str = "all") -> Dict[str, Any]:
@@ -113,7 +110,7 @@ class WeatherService:
             return self._process_weather_data(weather_data, city_name, extensions)
 
         except Exception as e:
-            logger.error(f"查询天气时发生错误: {str(e)}", exc_info=True)
+            singleton_logger.error(f"查询天气时发生错误: {str(e)}", exc_info=True)
             result["message"] = f"查询天气时发生错误: {str(e)}"
             return result
 
@@ -139,7 +136,7 @@ class WeatherService:
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
-            logger.error(f"天气API请求失败: {str(e)}")
+            singleton_logger.error(f"天气API请求失败: {str(e)}")
             return None
 
     def _process_weather_data(
@@ -222,7 +219,7 @@ class WeatherTools:
             api_key: 高德地图API密钥，默认为配置中的密钥
         """
         self.weather_service = WeatherService(api_key)
-        logger.info("天气查询工具初始化成功")
+        singleton_logger.info("天气查询工具初始化成功")
 
     def query_weather(self, city: str) -> str:
         """
@@ -242,7 +239,7 @@ class WeatherTools:
                 return result["summary"]
 
             # 如果预报天气失败，尝试获取实时天气
-            logger.info("预报天气获取失败，尝试获取实时天气")
+            singleton_logger.info("预报天气获取失败，尝试获取实时天气")
             result = self.weather_service.query_weather(city, "base")
 
             if result["status"] == WeatherService.STATUS_SUCCESS and result["summary"]:
@@ -252,5 +249,5 @@ class WeatherTools:
             return f"获取{city}的天气信息失败: {result.get('message', '未知错误')}"
 
         except Exception as e:
-            logger.error(f"查询天气时发生意外错误: {str(e)}", exc_info=True)
+            singleton_logger.error(f"查询天气时发生意外错误: {str(e)}", exc_info=True)
             return f"查询天气时发生系统错误: {str(e)}"

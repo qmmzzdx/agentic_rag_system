@@ -14,6 +14,7 @@ import tempfile
 from pathlib import Path
 from typing import List, Optional, Union
 from utils.decorators import error_handler, log_execution
+from utils.logger_manager import singleton_logger
 
 from langchain_community.document_loaders import (
     PyPDFLoader,
@@ -24,9 +25,6 @@ from langchain.schema import Document
 
 # 导入配置项
 from config.settings import CHUNK_SIZE, CHUNK_OVERLAP, SEPARATORS
-
-# 配置日志
-logger = logging.getLogger(__name__)
 
 # 支持的文件类型
 SUPPORTED_EXTENSIONS = {
@@ -47,18 +45,16 @@ class DocumentProcessor:
     - 可扩展的文件类型支持
     """
 
-    def __init__(self, cache_dir: str = ".document_cache", max_workers: int = 4):
+    def __init__(self, cache_dir: str = "document_cache"):
         """
         初始化文档处理器
 
         Args:
             cache_dir: 缓存目录路径，用于存储处理过的文档
-            max_workers: 最大工作线程数，用于并行处理文档
         """
         # 创建缓存目录
         self.cache_dir = Path(cache_dir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        self.max_workers = max_workers
 
         # 初始化文本分割器，用于将大文档分割成小块
         self.text_splitter = RecursiveCharacterTextSplitter(
@@ -68,7 +64,7 @@ class DocumentProcessor:
             length_function=len,           # 计算文本长度的函数
             is_separator_regex=False       # 分隔符是否为正则表达式
         )
-        logger.info(f"文档处理器初始化完成，缓存目录: {self.cache_dir}")
+        singleton_logger.info(f"文档处理器初始化完成，缓存目录: {self.cache_dir}")
 
     def _generate_cache_key(self, file_content: bytes, file_name: str) -> str:
         """
@@ -120,10 +116,10 @@ class DocumentProcessor:
                         return [Document(**doc) for doc in data]
         except (json.JSONDecodeError, OSError) as e:
             # 缓存加载失败时的警告（不影响正常流程）
-            logger.warning(f"缓存加载失败（已忽略）: {cache_path} - {str(e)}")
+            singleton_logger.warning(f"缓存加载失败（已忽略）: {cache_path} - {str(e)}")
         except Exception as e:
             # 其他异常记录错误日志
-            logger.error(f"缓存加载异常: {str(e)}", exc_info=True)
+            singleton_logger.error(f"缓存加载异常: {str(e)}", exc_info=True)
         return None
 
     def _save_to_cache(self, cache_path: Path, documents: List[Document]) -> bool:
@@ -146,10 +142,10 @@ class DocumentProcessor:
             return True
         except (OSError, TypeError) as e:
             # 文件操作或类型转换错误
-            logger.error(f"缓存保存失败: {str(e)}")
+            singleton_logger.error(f"缓存保存失败: {str(e)}")
         except Exception as e:
             # 其他异常记录错误日志
-            logger.error(f"缓存保存异常: {str(e)}", exc_info=True)
+            singleton_logger.error(f"缓存保存异常: {str(e)}", exc_info=True)
         return False
 
     @error_handler()
@@ -169,11 +165,11 @@ class DocumentProcessor:
         cache_path = self._get_cache_path(file_content, file_name)
         cached_docs = self._load_from_cache(cache_path)
         if cached_docs is not None:
-            logger.info(f"从缓存加载文件: {file_name}")
+            singleton_logger.info(f"从缓存加载文件: {file_name}")
             return cached_docs
 
         # 处理PDF文件（缓存未命中）
-        logger.info(f"处理文件: {file_name}")
+        singleton_logger.info(f"处理文件: {file_name}")
 
         try:
             # 创建临时文件（自动清理）
@@ -196,7 +192,7 @@ class DocumentProcessor:
                 return split_docs
 
         except Exception as e:
-            logger.error(f"处理PDF文件失败: {str(e)}")
+            singleton_logger.error(f"处理PDF文件失败: {str(e)}")
             raise
 
     def clear_cache(self):
@@ -205,9 +201,9 @@ class DocumentProcessor:
             # 遍历缓存目录中的所有JSON文件
             for file in self.cache_dir.glob("*.json"):
                 file.unlink()  # 删除文件
-            logger.info("缓存已清除")
+            singleton_logger.info("缓存已清除")
         except Exception as e:
-            logger.error(f"清除缓存失败: {str(e)}")
+            singleton_logger.error(f"清除缓存失败: {str(e)}")
             raise
 
     @error_handler()
@@ -259,5 +255,5 @@ class DocumentProcessor:
                 return f"不支持的文件类型: {file_name}"
 
         except Exception as e:
-            logger.error(f"处理文件失败: {str(e)}")
+            singleton_logger.error(f"处理文件失败: {str(e)}")
             raise Exception(f"处理文件失败: {str(e)}")

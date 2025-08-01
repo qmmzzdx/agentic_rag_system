@@ -2,11 +2,9 @@
 装饰器工具模块
 """
 import functools
-import logging
 import streamlit as st
 from typing import Callable, Any
-
-logger = logging.getLogger(__name__)
+from utils.logger_manager import singleton_logger
 
 
 def error_handler(show_error: bool = True) -> Callable:
@@ -22,7 +20,7 @@ def error_handler(show_error: bool = True) -> Callable:
             try:
                 return func(*args, **kwargs)
             except Exception as e:
-                logger.error(f"{func.__name__} 执行失败: {str(e)}")
+                singleton_logger.error(f"{func.__name__} 执行失败: {str(e)}")
                 if show_error:
                     st.error(f"操作失败: {str(e)}")
                 raise
@@ -39,12 +37,12 @@ def log_execution(func: Callable) -> Callable:
     """
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> Any:
-        logger.info(f"开始执行 {func.__name__}")
+        singleton_logger.info(f"开始执行 {func.__name__}")
         try:
             result = func(*args, **kwargs)
-            logger.info(f"{func.__name__} 执行成功")
+            singleton_logger.info(f"{func.__name__} 执行成功")
             return result
         except Exception as e:
-            logger.error(f"{func.__name__} 执行失败: {str(e)}")
+            singleton_logger.error(f"{func.__name__} 执行失败: {str(e)}")
             raise
     return wrapper

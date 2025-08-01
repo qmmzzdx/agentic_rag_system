@@ -4,13 +4,10 @@ UI组件模块，包含所有Streamlit UI渲染逻辑
 import streamlit as st
 from datetime import datetime
 from typing import Tuple, List
-import logging
 from utils.document_processor import DocumentProcessor
 from utils.vector_store import VectorStoreService
 from utils.chat_history import ChatHistoryManager
 from langchain.schema import Document
-
-logger = logging.getLogger(__name__)
 
 
 class UIComponents:
@@ -95,7 +92,7 @@ class UIComponents:
 
     # 3. 渲染聊天统计信息
     @staticmethod
-    def render_chat_stats(chat_history):
+    def render_chat_stats(chat_history: ChatHistoryManager):
         """
         渲染聊天统计信息组件
         参数:
@@ -103,9 +100,9 @@ class UIComponents:
         """
         st.sidebar.header("💬 对话历史")
         stats = chat_history.get_stats()
+        st.sidebar.info(f"🗓️ 对话日期: {stats['date']}")
         st.sidebar.info(
-            f"💬 总对话数: {stats['total_messages']} | 👤 用户消息: {stats['user_messages']}"
-        )
+            f"💬 总对话数: {stats['total_messages']} | 👤 用户消息: {stats['user_messages']}")
 
         # 导出历史按钮
         if st.sidebar.button("📥 导出对话历史", use_container_width=True):

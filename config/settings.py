@@ -4,21 +4,24 @@
 
 # ---------------------- 文件路径配置 ----------------------
 VECTOR_STORE_PATH = "faiss_index"       # 向量存储索引目录
-HISTORY_FILE = "chat_history.json"      # 对话历史存储文件
 
 # ---------------------- 模型服务配置 ----------------------
-# 默认模型和可用模型列表
-DEFAULT_MODEL = "qwen3:8b"
-AVAILABLE_MODELS = ["qwen3:1.7b", "deepseek-r1:1.5b", "qwen3:8b"]
+# 默认模型
+DEFAULT_MODEL = "qwen3:0.6b"
+# 可用模型列表
+AVAILABLE_MODELS = ["qwen3:0.6b", "deepseek-r1:latest", "qwen3:latest"]
 
 # 嵌入模型配置
-EMBEDDING_MODEL = "dengcao/Qwen3-Embedding-8B:Q5_K_M"
-EMBEDDING_BASE_URL = "http://localhost:11434"  # 嵌入模型服务地址
+EMBEDDING_MODEL = "dengcao/Qwen3-Embedding-0.6B:Q8_0"
+# 嵌入模型服务地址
+EMBEDDING_BASE_URL = "http://localhost:11434"
+# 可用嵌入模型列表
+# 这些模型用于将文本转换为向量表示
+# 可根据需要添加或修改
 AVAILABLE_EMBEDDING_MODELS = [
+    "dengcao/Qwen3-Embedding-0.6B:Q8_0",
     "dengcao/Qwen3-Embedding-8B:Q5_K_M",
     "bge-m3:latest",
-    "bge-large-en-v1.5:latest",
-    "bge-large-zh-v1.5:latest"
 ]
 
 # ---------------------- RAG 配置 ----------------------

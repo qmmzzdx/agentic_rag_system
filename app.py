@@ -1,5 +1,4 @@
 import streamlit as st
-import logging
 import re
 from config.settings import (
     DEFAULT_MODEL,
@@ -8,21 +7,19 @@ from config.settings import (
     EMBEDDING_MODEL,
     AVAILABLE_EMBEDDING_MODELS
 )
-# RAGAgent: 用于处理用户输入和生成响应的智能体，封装模型交互逻辑。
+# RAGAgent: 用于处理用户输入和生成响应的智能体，封装模型交互逻辑
 from models.agent import RAGAgent
 # ChatHistoryManager: 管理对话历史
 from utils.chat_history import ChatHistoryManager
 # DocumentProcessor: 处理用户上传的文档
 from utils.document_processor import DocumentProcessor
+# SingleTonLogger: 单例日志记录器，用于全局日志管理
+from utils.logger_manager import singleton_logger
 # VectorStoreService: 向量数据库服务，用于文档索引与检索
 from utils.vector_store import VectorStoreService
 # UIComponents: 用户界面组件，用于渲染UI
 from utils.ui_components import UIComponents
 from utils.decorators import error_handler, log_execution
-
-# 配置日志
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 class App:
@@ -42,7 +39,7 @@ class App:
         self.chat_history = ChatHistoryManager()  # 创建聊天历史管理器
         self.document_processor = DocumentProcessor()  # 创建文档处理器
         self.vector_store = VectorStoreService()  # 创建向量存储服务
-        logger.info("应用初始化成功")
+        singleton_logger.info("应用初始化成功")
 
     # 1. 初始化会话状态
     @error_handler(show_error=False)
@@ -170,7 +167,7 @@ class App:
                 prompt,
                 st.session_state.similarity_threshold
             )
-            logger.info(f"检索到的文档数: {len(docs)}")
+            singleton_logger.info(f"检索到的文档数: {len(docs)}")
 
             # 获取文档上下文
             context = self.vector_store.get_context(docs)

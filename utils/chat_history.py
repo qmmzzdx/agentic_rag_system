@@ -1,58 +1,77 @@
 """
-对话历史管理类 - 提供对话历史的存储、加载、格式化和导出功能
+对话历史管理类 - 提供按日期分组的对话历史存储、加载和导出功能
 """
 import os
 import json
-import logging
+from datetime import datetime
 from typing import List, Dict, Optional
 import pandas as pd
-from config.settings import HISTORY_FILE, MAX_HISTORY_TURNS  # 导入配置文件中的路径和最大历史轮数设置
-
-# 配置日志记录器
-logger = logging.getLogger(__name__)
+from pathlib import Path
+from config.settings import MAX_HISTORY_TURNS  # 导入配置文件中的最大历史轮数设置
+from utils.logger_manager import singleton_logger
 
 
 class ChatHistoryManager:
     """
-    对话历史管理器类，负责处理对话历史的存储、检索和转换操作
+    对话历史管理器类，按日期组织对话历史文件
+
+    功能特点：
+    - 自动创建chat_history目录存储历史记录
+    - 每天生成单独的JSON历史文件（格式：history_YYYYMMDD.json）
+    - 提供历史记录的增删改查功能
+    - 支持历史记录格式化和统计
     """
 
     def __init__(self):
-        """初始化对话历史管理器，自动加载已有的对话历史"""
+        """初始化对话历史管理器，创建存储目录"""
+        # 创建历史记录存储目录
+        self.history_dir = Path("chat_history")
+        self.history_dir.mkdir(exist_ok=True)
+
+        # 初始化当前日期的历史文件路径
+        self.current_history_file = self._get_today_history_file()
         self.history: List[Dict] = self.load_history()
 
-    # 1. 从文件加载对话历史
+    def _get_today_history_file(self) -> Path:
+        """
+        获取当天历史记录文件路径
+
+        Returns:
+            Path: 当天历史记录文件路径（格式：chat_history/chat_history_YYYYMMDD.json）
+        """
+        today_str = datetime.now().strftime("%Y%m%d")
+        return self.history_dir / f"chat_history_{today_str}.json"
+
     def load_history(self) -> List[Dict]:
         """
-        从指定文件路径加载JSON格式的对话历史
+        从当天历史文件加载对话历史
 
         Returns:
             List[Dict]: 包含历史消息的字典列表，每个字典包含'role'和'content'键
-                        如果加载失败则返回空列表
+                        如果文件不存在或加载失败则返回空列表
         """
         try:
-            # 检查历史文件是否存在
-            if os.path.exists(HISTORY_FILE):
-                # 以UTF-8编码打开并读取JSON文件
-                with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+            if self.current_history_file.exists():
+                with open(self.current_history_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
+            else:
+                singleton_logger.warning(
+                    f"历史文件不存在: {self.current_history_file}")
+                return []
         except Exception as e:
-            # 记录加载错误日志
-            logger.error(f"加载对话历史时出错: {str(e)}")
+            singleton_logger.error(
+                f"加载历史记录失败[{self.current_history_file}]: {str(e)}")
         return []
 
-    # 2. 保存对话历史到文件
     def save_history(self) -> None:
-        """将当前对话历史保存到JSON文件中"""
+        """将当前对话历史保存到当天历史文件中"""
         try:
-            # 以缩进为4的格式写入JSON文件
-            with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+            with open(self.current_history_file, 'w', encoding='utf-8') as f:
                 json.dump(self.history, f, ensure_ascii=False, indent=4)
         except Exception as e:
-            # 记录保存错误日志
-            logger.error(f"保存对话历史时出错: {str(e)}")
+            singleton_logger.error(
+                f"保存历史记录失败[{self.current_history_file}]: {str(e)}")
 
-    # 3. 添加新消息到历史记录
     def add_message(self, role: str, content: str) -> None:
         """
         添加新消息到历史记录并自动保存
@@ -61,21 +80,29 @@ class ChatHistoryManager:
             role (str): 消息角色 ('user' 或 'assistant')
             content (str): 消息文本内容
         """
-        # 将新消息添加到历史记录列表
+        # 检查是否需要切换到新日期的文件
+        new_file = self._get_today_history_file()
+        if new_file != self.current_history_file:
+            # 保存当前日期的历史记录
+            self.save_history()
+
+            # 切换到新日期的文件
+            self.current_history_file = new_file
+            self.history = self.load_history()  # 加载新日期的历史记录
+
         self.history.append({"role": role, "content": content})
-        # 保存更新后的历史记录
         self.save_history()
 
-    # 4. 清空对话历史
     def clear_history(self) -> None:
-        """清空内存中的历史记录并删除历史文件"""
-        # 清空内存中的历史记录
+        """清空内存中的历史记录并删除当天历史文件"""
         self.history = []
-        # 如果历史文件存在，则删除
-        if os.path.exists(HISTORY_FILE):
-            os.remove(HISTORY_FILE)
+        try:
+            if self.current_history_file.exists():
+                os.remove(self.current_history_file)
+        except Exception as e:
+            singleton_logger.error(
+                f"删除历史文件失败[{self.current_history_file}]: {str(e)}")
 
-    # 5. 获取格式化的对话历史
     def get_formatted_history(self, max_turns: int = MAX_HISTORY_TURNS) -> str:
         """
         将最近的对话历史格式化为易读的字符串
@@ -84,57 +111,67 @@ class ChatHistoryManager:
             max_turns (int): 最大保留的对话轮数（每轮包含用户+助手消息）
 
         Returns:
-            str: 格式化后的对话历史字符串，包含角色标识和消息内容
+            str: 格式化后的对话历史字符串
         """
-        # 如果没有历史记录，返回空字符串
         if not self.history:
             return ""
 
-        # 计算需要保留的消息数量（每轮2条消息）
         max_messages = max_turns * 2
-        # 获取最近的N条消息（如果总消息数不足则获取全部）
         recent_history = self.history[-max_messages:] if len(
             self.history) > max_messages else self.history
 
-        # 构建格式化字符串
-        formatted_history = "以下是之前的对话历史：\n"
+        formatted_history = "对话历史：\n"
         for msg in recent_history:
-            # 将角色标识转换为中文
             role = "用户" if msg["role"] == "user" else "助手"
-            # 添加消息到结果字符串
             formatted_history += f"{role}: {msg['content']}\n"
-
         return formatted_history
 
-    # 6. 导出对话历史为CSV文件
-    def export_to_csv(self) -> Optional[bytes]:
+    def export_to_csv(self, date_str: Optional[str] = None) -> Optional[bytes]:
         """
-        将对话历史导出为CSV格式的字节数据
+        导出指定日期的历史记录为CSV
+
+        Args:
+            date_str (str, optional): 日期字符串(YYYYMMDD格式)，None表示当天
 
         Returns:
-            Optional[bytes]: UTF-8编码的CSV文件内容，失败时返回None
+            Optional[bytes]: CSV文件内容(UTF-8编码)，失败返回None
         """
         try:
-            # 将历史记录转换为Pandas DataFrame
-            df = pd.DataFrame(self.history)
-            # 将DataFrame转换为CSV格式的字节数据（不带索引）
+            target_file = self._get_history_file_by_date(
+                date_str) if date_str else self.current_history_file
+            if not target_file.exists():
+                return None
+
+            with open(target_file, 'r', encoding='utf-8') as f:
+                history = json.load(f)
+
+            df = pd.DataFrame(history)
             return df.to_csv(index=False).encode('utf-8')
         except Exception as e:
-            # 记录导出错误日志
-            logger.error(f"导出对话历史时出错: {str(e)}")
+            singleton_logger.error(f"导出历史记录失败[{date_str}]: {str(e)}")
             return None
 
-    # 7. 获取对话历史统计信息
-    def get_stats(self) -> Dict[str, int]:
+    def _get_history_file_by_date(self, date_str: str) -> Path:
         """
-        获取对话历史的统计信息
+        根据日期字符串获取历史文件路径
+
+        Args:
+            date_str (str): 日期字符串(YYYYMMDD格式)
 
         Returns:
-            Dict[str, int]: 包含统计信息的字典：
-                - total_messages: 总消息数
-                - user_messages: 用户消息数
+            Path: 对应日期的历史文件路径
+        """
+        return self.history_dir / f"chat_history_{date_str}.json"
+
+    def get_stats(self) -> Dict[str, int]:
+        """
+        获取当天对话历史的统计信息
+
+        Returns:
+            Dict[str, int]: 包含total_messages和user_messages的字典
         """
         return {
+            "date": datetime.now().strftime("%Y-%m-%d"),
             "total_messages": len(self.history),
             "user_messages": sum(1 for msg in self.history if msg["role"] == "user")
         }
