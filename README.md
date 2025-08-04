@@ -74,6 +74,7 @@ agentic_rag_system/
 │   ├── chat_history.py           # 对话历史管理类 - 提供对话历史的存储、加载、格式化和导出功能
 │   ├── decorators.py             # 装饰器工具模块
 │   ├── document_processor.py     # 文档处理模块 - 提供多种文档类型的加载、处理和缓存功能
+│   ├── logger_manager.py         # 日志管理类 - 提供全局单例日志记录器，支持控制台和文件输出
 │   ├── ui_components.py          # UI组件模块，包含所有Streamlit UI渲染逻辑
 │   └── vector_store.py           # 向量存储服务模块 - 提供文档向量化、存储和检索功能
 ├── app.py                        # 主应用入口
@@ -109,7 +110,7 @@ agentic_rag_system/
 
 在侧边栏可灵活配置系统参数：
 
-- **模型选择**：可选不同大小的Qwen3模型（Qwen3:0.5b, Qwen3:4b, Qwen3:7b等）  
+- **模型选择**：可选不同大小的Qwen3和DeepSeek模型（qwen3:0.6b，deepseek-r1:latest，qwen3:latest等）  
 - **嵌入模型**：可选不同的文本嵌入模型（Qwen3-Embedding, BGE-M3等）  
 - **相似度阈值**：调整文档检索的相似度要求（默认0.7）  
 - **RAG模式开关**：快速切换RAG文档问答模式和普通对话模式  
@@ -120,7 +121,7 @@ agentic_rag_system/
 - 更改嵌入模型后，可能需要重新处理文档以更新索引  
 - 对于查询效果不佳的情况，尝试调整相似度阈值  
 - 天气查询功能需要网络连接以访问高德地图API  
-- 聊天历史自动保存在`chat_history.json`中，重启后仍可访问  
+- 聊天历史自动保存在`./chat_history/ars-chat-history-YYYYMMDD.json`中，重启后仍可访问  
 
 ## 开发者指南
 
@@ -167,11 +168,10 @@ TOOL_WEATHER = {
 在`document_processor.py`中添加新的文档加载器：
 
 ```python
-# 支持的文件类型
-SUPPORTED_EXTENSIONS = {
-    '.pdf': PyPDFLoader,
-    '.txt': TextLoader,
-    # 可扩展更多文件类型
+# 支持的文件类型和对应加载器
+SUPPORTED_EXTENSIONS: Dict[str, Type[BaseLoader]] = {
+    '.pdf': PyPDFLoader,   # PDF文档加载器
+    '.txt': TextLoader,    # TXT文件加载器
 }
 ```
 
@@ -179,17 +179,21 @@ SUPPORTED_EXTENSIONS = {
 
 在`config/settings.py`中添加新的模型和其余配置：
 ```python
-# 默认模型和可用模型列表
-DEFAULT_MODEL = "qwen3:8b"
-AVAILABLE_MODELS = ["qwen3:1.7b", "deepseek-r1:1.5b", "qwen3:8b"]
+# 默认模型
+DEFAULT_MODEL = "qwen3:0.6b"
+# 可用模型列表
+AVAILABLE_MODELS = ["qwen3:0.6b", "deepseek-r1:latest", "qwen3:latest"]
 
 # 嵌入模型配置
-EMBEDDING_MODEL = "Qwen3-Embedding-8B:Q5_K_M"
-EMBEDDING_BASE_URL = "http://localhost:11434"  # 嵌入模型服务地址
+EMBEDDING_MODEL = "dengcao/Qwen3-Embedding-0.6B:Q8_0"
+# 嵌入模型服务地址
+EMBEDDING_BASE_URL = "http://localhost:11434"
+# 可用嵌入模型列表
+# 这些模型用于将文本转换为向量表示
+# 可根据需要添加或修改
 AVAILABLE_EMBEDDING_MODELS = [
-    "Qwen3-Embedding-8B:Q5_K_M",
+    "dengcao/Qwen3-Embedding-0.6B:Q8_0",
+    "dengcao/Qwen3-Embedding-8B:Q5_K_M",
     "bge-m3:latest",
-    "bge-large-en-v1.5:latest",
-    "bge-large-zh-v1.5:latest"
 ]
 ```

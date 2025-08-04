@@ -17,7 +17,7 @@ class ChatHistoryManager:
 
     功能特点：
     - 自动创建chat_history目录存储历史记录
-    - 每天生成单独的JSON历史文件（格式：history_YYYYMMDD.json）
+    - 每天生成单独的JSON历史文件（格式：ars-chat-history-YYYYMMDD.json）
     - 提供历史记录的增删改查功能
     - 支持历史记录格式化和统计
     """
@@ -37,10 +37,10 @@ class ChatHistoryManager:
         获取当天历史记录文件路径
 
         Returns:
-            Path: 当天历史记录文件路径（格式：chat_history/chat_history_YYYYMMDD.json）
+            Path: 当天历史记录文件路径（格式：chat_history/ars-chat-history-YYYYMMDD.json）
         """
         today_str = datetime.now().strftime("%Y%m%d")
-        return self.history_dir / f"chat_history_{today_str}.json"
+        return self.history_dir / f"ars-chat-history-{today_str}.json"
 
     def load_history(self) -> List[Dict]:
         """
@@ -161,7 +161,7 @@ class ChatHistoryManager:
         Returns:
             Path: 对应日期的历史文件路径
         """
-        return self.history_dir / f"chat_history_{date_str}.json"
+        return self.history_dir / f"ars-chat-history-{date_str}.json"
 
     def get_stats(self) -> Dict[str, int]:
         """

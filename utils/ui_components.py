@@ -173,7 +173,7 @@ class UIComponents:
                             try:
                                 # 处理文件内容
                                 result = document_processor.process_file(
-                                    uploaded_file)
+                                    uploaded_file.getvalue(), uploaded_file.name)
 
                                 if isinstance(result, list):
                                     # 对于PDF文档块，直接使用

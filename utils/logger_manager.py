@@ -42,7 +42,7 @@ class SingleTonLogger:
            - 格式：时间 | 日志级别 | 模块:行号 - 消息
 
         2. 文件输出：
-           - 每日生成单个日志文件（agentic_rag_YYYY-MM-DD.log）
+           - 每日生成单个日志文件（ars-YYYY-MM-DD.log）
            - 文件大小超过20MB自动创建新文件
            - 保留当天日志文件
            - 记录DEBUG及以上级别日志
@@ -63,7 +63,7 @@ class SingleTonLogger:
 
         # 配置文件输出处理器
         logger.add(
-            sink=self.log_dir / "agentic_rag_{time:YYYY-MM-DD}.log",
+            sink=self.log_dir / "ars-{time:YYYY-MM-DD}.log",
             rotation="20 MB",    # 文件大小达到20MB时轮转
             retention="1 day",   # 仅保留当天日志文件
             compression=None,    # 不压缩日志文件
