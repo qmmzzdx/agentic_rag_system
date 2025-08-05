@@ -8,8 +8,8 @@ from agno.agent import Agent
 from agno.models.ollama import Ollama
 from agno.tools.reasoning import ReasoningTools
 from agno.tools.function import Function
-from config.settings import DEFAULT_MODEL
-from utils.logger_manager import singleton_logger
+from settings.system_settings import DEFAULT_MODEL
+from utils.logger.logger_manager import singleton_logger
 
 
 class RAGAgent:
@@ -26,8 +26,8 @@ class RAGAgent:
     def __init__(
         self,
         model_version: str = DEFAULT_MODEL,
-        tool_config: str = "config.agent_tools",
-        instruction_template: str = "config.agent_instructions"
+        tool_config: str = "agent.tools.agent_tools_select",
+        instruction_template: str = "agent.agent_prompt.agent_instructions"
     ):
         """
         初始化RAG智能体

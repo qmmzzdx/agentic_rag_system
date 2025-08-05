@@ -8,10 +8,10 @@ from langchain.schema import Document
 from langchain_ollama import OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from utils.decorators import error_handler
-from utils.logger_manager import singleton_logger
+from utils.logger.logger_manager import singleton_logger
 
 # 导入配置项
-from config.settings import (
+from settings.system_settings import (
     EMBEDDING_MODEL,
     EMBEDDING_BASE_URL,
     MAX_RETRIEVED_DOCS,
@@ -227,51 +227,6 @@ class VectorStoreService:
         if not docs:
             return ""
         return "\n\n".join(doc.page_content for doc in docs)
-
-    @error_handler()
-    def add_document(self, content: str, metadata: Dict[str, Any] = None) -> bool:
-        """
-        添加单个文档到现有向量存储（增量更新）
-
-        Args:
-            content: 文档文本内容
-            metadata: 文档元数据（可选）
-
-        Returns:
-            bool: 是否成功添加
-        """
-        if not content:
-            singleton_logger.warning("文档内容为空，无法添加")
-            return False
-
-        try:
-            # 创建Document对象
-            doc = Document(page_content=content, metadata=metadata or {})
-
-            # 对文档进行分块处理
-            split_docs = self.split_documents([doc])
-
-            # 确保向量存储已加载
-            if not self.vector_store:
-                self.vector_store = self.load_vector_store()
-                if not self.vector_store:
-                    # 不存在则创建新存储
-                    self.vector_store = self.create_vector_store([doc])
-                    return True
-
-            # 向现有存储添加文档块
-            self.vector_store.add_documents(split_docs)
-
-            # 保存更新后的向量存储
-            self._save_vector_store(self.vector_store)
-
-            singleton_logger.info(
-                f"成功添加文档，标题: {metadata.get('source', '未知') if metadata else '未知'}，分块数量: {len(split_docs)}")
-            return True
-
-        except Exception as e:
-            singleton_logger.error(f"添加文档失败: {str(e)}")
-            return False
 
     def clear_index(self):
         """清除所有索引文件并重置向量存储"""

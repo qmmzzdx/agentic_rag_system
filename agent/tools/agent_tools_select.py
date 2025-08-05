@@ -1,8 +1,8 @@
 """
 工具配置 - 定义智能体可使用的各种工具
 """
-from services.weather_tools import WeatherTools
-from config.settings import AMAP_API_KEY
+from agent.tools.weather_tool import WeatherTools
+from settings.system_settings import AMAP_API_KEY
 
 # 天气查询工具
 TOOL_WEATHER = {

@@ -7,8 +7,7 @@ from datetime import datetime
 from typing import List, Dict, Optional
 import pandas as pd
 from pathlib import Path
-from config.settings import MAX_HISTORY_TURNS  # 导入配置文件中的最大历史轮数设置
-from utils.logger_manager import singleton_logger
+from utils.logger.logger_manager import singleton_logger
 
 
 class ChatHistoryManager:
@@ -102,29 +101,6 @@ class ChatHistoryManager:
         except Exception as e:
             singleton_logger.error(
                 f"删除历史文件失败[{self.current_history_file}]: {str(e)}")
-
-    def get_formatted_history(self, max_turns: int = MAX_HISTORY_TURNS) -> str:
-        """
-        将最近的对话历史格式化为易读的字符串
-
-        Args:
-            max_turns (int): 最大保留的对话轮数（每轮包含用户+助手消息）
-
-        Returns:
-            str: 格式化后的对话历史字符串
-        """
-        if not self.history:
-            return ""
-
-        max_messages = max_turns * 2
-        recent_history = self.history[-max_messages:] if len(
-            self.history) > max_messages else self.history
-
-        formatted_history = "对话历史：\n"
-        for msg in recent_history:
-            role = "用户" if msg["role"] == "user" else "助手"
-            formatted_history += f"{role}: {msg['content']}\n"
-        return formatted_history
 
     def export_to_csv(self, date_str: Optional[str] = None) -> Optional[bytes]:
         """

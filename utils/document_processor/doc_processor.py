@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Dict, List, Type, Optional
 
 from utils.decorators import error_handler, log_execution
-from utils.logger_manager import singleton_logger
+from utils.logger.logger_manager import singleton_logger
 
 from langchain_community.document_loaders.base import BaseLoader
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
@@ -23,7 +23,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 
 # 配置参数
-from config.settings import CHUNK_SIZE, CHUNK_OVERLAP, SEPARATORS
+from settings.system_settings import CHUNK_SIZE, CHUNK_OVERLAP, SEPARATORS
 
 # 支持的文件类型和对应加载器
 SUPPORTED_EXTENSIONS: Dict[str, Type[BaseLoader]] = {
@@ -256,22 +256,3 @@ class DocumentProcessor:
 
         # 处理文档
         return self._process_with_loader(file_content, file_extension)
-
-    @error_handler()
-    def clear_cache(self):
-        """清除所有缓存文件"""
-        cache_files = list(self.cache_dir.glob("*.json"))
-        if not cache_files:
-            singleton_logger.info("缓存目录为空")
-            return
-
-        success, failure = 0, 0
-        for cache_file in cache_files:
-            try:
-                cache_file.unlink()
-                success += 1
-            except Exception as e:
-                singleton_logger.error(f"删除缓存失败 {cache_file.name}: {str(e)}")
-                failure += 1
-
-        singleton_logger.info(f"缓存清理完成 | 成功: {success} | 失败: {failure}")

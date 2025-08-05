@@ -3,10 +3,10 @@
 """
 import requests
 from typing import Dict, Any, Optional, Tuple
-from utils.logger_manager import singleton_logger
+from utils.logger.logger_manager import singleton_logger
 
 # 导入配置项
-from config.settings import (
+from settings.system_settings import (
     AMAP_API_KEY,
     AMAP_WEATHER_API_URL,
     AMAP_GEO_API_URL

@@ -4,10 +4,10 @@ UI组件模块，包含所有Streamlit UI渲染逻辑
 import streamlit as st
 from datetime import datetime
 from typing import Tuple, List
-from utils.document_processor import DocumentProcessor
-from utils.vector_store import VectorStoreService
-from utils.chat_history import ChatHistoryManager
 from langchain.schema import Document
+from utils.document_processor.doc_processor import DocumentProcessor
+from utils.knowledge_base.vector_store import VectorStoreService
+from utils.chat_record.chat_history import ChatHistoryManager
 
 
 class UIComponents:
@@ -87,7 +87,6 @@ class UIComponents:
         if st.sidebar.button("🔄 重置相似度阈值", use_container_width=True):
             new_similarity_threshold = default_threshold
             st.toast("已重置相似度阈值", icon="🔄")
-
         return new_rag_enabled, new_similarity_threshold
 
     # 3. 渲染聊天统计信息

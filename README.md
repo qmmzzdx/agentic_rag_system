@@ -46,7 +46,7 @@ ollama run dengcao/Qwen3-Embedding-8B:Q5_K_M
 
 #### 2. 添加要用的API_KEY
 
-在`config/settings.py`中添加要用的API_KEY：
+在`settings/system_settings.py`中添加要用的API_KEY：
 
 ```python
 AMAP_API_KEY = "xxxx"
@@ -62,23 +62,30 @@ streamlit run ./app.py --server.port 6006
 
 ```
 agentic_rag_system/
-├── config/                       # 配置文件目录
-│   ├── agent_instructions.py     # 智能体指令和提示模板配置
-│   ├── agent_tools.py            # 工具配置 - 定义智能体可使用的各种工具
-│   └── settings.py               # 系统配置文件 - 包含所有常量和核心配置项
-├── models/                       # 模型相关代码
-│   └── agent.py                  # RAG智能体实现
-├── services/                     # 核心服务工具
-│   └── weather_tools.py          # 天气查询工具
-├── utils/                        # 工具文件目录
-│   ├── chat_history.py           # 对话历史管理类 - 提供对话历史的存储、加载、格式化和导出功能
-│   ├── decorators.py             # 装饰器工具模块
-│   ├── document_processor.py     # 文档处理模块 - 提供多种文档类型的加载、处理和缓存功能
-│   ├── logger_manager.py         # 日志管理类 - 提供全局单例日志记录器，支持控制台和文件输出
-│   ├── ui_components.py          # UI组件模块，包含所有Streamlit UI渲染逻辑
-│   └── vector_store.py           # 向量存储服务模块 - 提供文档向量化、存储和检索功能
-├── app.py                        # 主应用入口
-└── README.md                     # 项目文档
+├── agent/                             # 智能体相关模块
+│   ├── agent_prompt/                  # 智能体提示词配置
+│   │   └── agent_instructions.py      # 智能体指令和提示模板
+│   ├── tools/                         # 智能体工具集
+│   │   ├── agent_tools_select.py      # 工具选择与路由逻辑
+│   │   └── weather_tool.py            # 天气查询工具实现
+│   └── chat_agent.py                  # 智能体核心实现
+├── settings/                          # 系统配置目录
+│   └── system_settings.py             # 系统级配置和常量定义
+├── utils/                             # 工具与辅助模块
+│   ├── chat_record/                   # 聊天记录管理
+│   │   └── chat_history.py            # 对话历史存储与处理
+│   ├── document_processor/            # 文档处理模块
+│   │   └── doc_processor.py           # 文档加载与预处理
+│   ├── knowledge_base/                # 知识库管理
+│   │   └── vector_store.py            # 向量存储服务实现
+│   ├── logger/                        # 日志管理模块
+│   │   └── logger_manager.py          # 日志记录器实现
+│   ├── ui/                            # 用户界面组件
+│   │   └── ui_components.py           # Streamlit UI组件库
+│   └── decorators.py                  # Python装饰器工具
+├── app.py                             # Streamlit应用主入口
+├── LICENSE
+└── README.md
 ```
 
 ## 核心功能
@@ -139,7 +146,7 @@ agentic_rag_system/
 
 ### 1. 添加新工具
 
-参考`weather_tools.py`实现新工具，在`agent_tools.py`中添加：
+参考`weather_tool.py`实现新工具，在`agent_tools_select.py`中添加：
 
 ```python
 # 天气查询工具
@@ -165,7 +172,7 @@ TOOL_WEATHER = {
 
 ### 2. 支持新文档格式
 
-在`document_processor.py`中添加新的文档加载器：
+在`doc_processor.py`中添加新的文档加载器：
 
 ```python
 # 支持的文件类型和对应加载器
@@ -177,7 +184,7 @@ SUPPORTED_EXTENSIONS: Dict[str, Type[BaseLoader]] = {
 
 ### 3. 自定义配置
 
-在`config/settings.py`中添加新的模型和其余配置：
+在`settings/system_settings.py`中添加新的模型和其余配置：
 ```python
 # 默认模型
 DEFAULT_MODEL = "qwen3:0.6b"

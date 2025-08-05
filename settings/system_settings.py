@@ -50,6 +50,3 @@ AMAP_WEATHER_API_URL = "https://restapi.amap.com/v3/weather/weatherInfo"
 # 文档：https://lbs.amap.com/api/webservice/guide/api/georegeo
 # 用于将地址转换为经纬度坐标或获取行政区划编码(adcode)
 AMAP_GEO_API_URL = "https://restapi.amap.com/v3/geocode/geo"
-
-# ---------------------- 对话历史管理配置 ----------------------
-MAX_HISTORY_TURNS = 5  # 最大对话轮次保留数

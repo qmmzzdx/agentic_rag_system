@@ -1,6 +1,6 @@
 import streamlit as st
 import re
-from config.settings import (
+from settings.system_settings import (
     DEFAULT_MODEL,
     AVAILABLE_MODELS,
     DEFAULT_SIMILARITY_THRESHOLD,
@@ -8,17 +8,17 @@ from config.settings import (
     AVAILABLE_EMBEDDING_MODELS
 )
 # RAGAgent: 用于处理用户输入和生成响应的智能体，封装模型交互逻辑
-from models.agent import RAGAgent
+from agent.chat_agent import RAGAgent
 # ChatHistoryManager: 管理对话历史
-from utils.chat_history import ChatHistoryManager
+from utils.chat_record.chat_history import ChatHistoryManager
 # DocumentProcessor: 处理用户上传的文档
-from utils.document_processor import DocumentProcessor
+from utils.document_processor.doc_processor import DocumentProcessor
 # SingleTonLogger: 单例日志记录器，用于全局日志管理
-from utils.logger_manager import singleton_logger
+from utils.logger.logger_manager import singleton_logger
 # VectorStoreService: 向量数据库服务，用于文档索引与检索
-from utils.vector_store import VectorStoreService
+from utils.knowledge_base.vector_store import VectorStoreService
 # UIComponents: 用户界面组件，用于渲染UI
-from utils.ui_components import UIComponents
+from utils.ui.ui_components import UIComponents
 from utils.decorators import error_handler, log_execution
 
 
@@ -35,10 +35,10 @@ class App:
         3. 创建文档处理器
         4. 创建向量存储服务
         """
-        self._init_session_state()  # 初始化会话状态
-        self.chat_history = ChatHistoryManager()  # 创建聊天历史管理器
+        self._init_session_state()                     # 初始化会话状态
+        self.chat_history = ChatHistoryManager()       # 创建聊天历史管理器
         self.document_processor = DocumentProcessor()  # 创建文档处理器
-        self.vector_store = VectorStoreService()  # 创建向量存储服务
+        self.vector_store = VectorStoreService()       # 创建向量存储服务
         singleton_logger.info("应用初始化成功")
 
     # 1. 初始化会话状态
@@ -53,17 +53,17 @@ class App:
         - 设置默认嵌入模型
         """
         if 'model_version' not in st.session_state:
-            st.session_state.model_version = DEFAULT_MODEL  # 设置默认模型
+            st.session_state.model_version = DEFAULT_MODEL                        # 设置默认模型
         if 'processed_documents' not in st.session_state:
-            st.session_state.processed_documents = []  # 初始化已处理文档列表
+            st.session_state.processed_documents = []                             # 初始化已处理文档列表
         if 'similarity_threshold' not in st.session_state:
             st.session_state.similarity_threshold = DEFAULT_SIMILARITY_THRESHOLD  # 设置默认相似度阈值
         if 'rag_enabled' not in st.session_state:
-            st.session_state.rag_enabled = True  # 默认启用RAG功能
+            st.session_state.rag_enabled = True                                   # 默认启用RAG功能
         if 'embedding_model' not in st.session_state:
-            st.session_state.embedding_model = EMBEDDING_MODEL  # 设置默认嵌入模型
+            st.session_state.embedding_model = EMBEDDING_MODEL                    # 设置默认嵌入模型
         if 'doc_count' not in st.session_state:
-            st.session_state.doc_count = 0  # 文档块计数
+            st.session_state.doc_count = 0                                        # 文档块计数
 
     # 2. 渲染侧边栏
     @error_handler()
@@ -97,11 +97,13 @@ class App:
 
         # 更新向量存储服务的嵌入模型
         if previous_embedding_model != st.session_state.embedding_model:
-            if self.vector_store.update_embedding_model(st.session_state.embedding_model):
-                # 如果向量存储已存在，则提示用户可能需要重新处理文档
-                if len(st.session_state.processed_documents) > 0:
-                    st.sidebar.info(
-                        f"⚠️ 嵌入模型已更改为 {st.session_state.embedding_model}，您可能需要重新处理文档以使用新的嵌入模型。")
+            # 尝试更新模型并检查是否已有处理文档
+            model_updated = self.vector_store.update_embedding_model(
+                st.session_state.embedding_model)
+            has_processed_docs = len(st.session_state.processed_documents) > 0
+            if model_updated and has_processed_docs:
+                st.sidebar.info(
+                    f"⚠️ 嵌入模型已更改为 {st.session_state.embedding_model}，您可能需要重新处理文档以使用新的嵌入模型。")
 
         # 渲染向量存储状态
         UIComponents.render_vector_store_status(
@@ -144,9 +146,9 @@ class App:
         """
         self.chat_history.add_message("user", prompt)  # 将用户消息添加到聊天历史
         if st.session_state.rag_enabled:
-            self._process_rag_query(prompt)  # 如果启用RAG，处理RAG查询
+            self._process_rag_query(prompt)            # 如果启用RAG，处理RAG查询
         else:
-            self._process_simple_query(prompt)  # 否则处理简单查询
+            self._process_simple_query(prompt)         # 否则处理简单查询
 
     # 5. 处理RAG查询
     @error_handler()
@@ -218,7 +220,7 @@ class App:
         @param docs: 检索到的文档（RAG模式下提供）
         """
         # 7.1 处理响应中的思考过程
-        think_pattern = r'<think>([\s\S]*?)</think>'  # 定义思考过程的正则表达式模式
+        think_pattern = r'<think>([\s\S]*?)</think>'      # 定义思考过程的正则表达式模式
         think_match = re.search(think_pattern, response)  # 搜索思考过程
 
         if think_match:

@@ -4,7 +4,7 @@
 import functools
 import streamlit as st
 from typing import Callable, Any
-from utils.logger_manager import singleton_logger
+from utils.logger.logger_manager import singleton_logger
 
 
 def error_handler(show_error: bool = True) -> Callable:
