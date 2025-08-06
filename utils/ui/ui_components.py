@@ -13,7 +13,7 @@ from utils.chat_record.chat_history import ChatHistoryManager
 class UIComponents:
     """UI组件类，封装了所有Streamlit UI渲染逻辑"""
 
-    # 1.渲染模型选择组件
+    # 渲染模型选择组件
     @staticmethod
     def render_model_selection(available_models: List[str], current_model: str,
                                embedding_models: List[str], current_embedding_model: str) -> Tuple[str, str]:
@@ -52,7 +52,7 @@ class UIComponents:
 
         return new_model, new_embedding_model
 
-    # 2. 渲染RAG设置组件
+    # 渲染RAG设置组件
     @staticmethod
     def render_rag_settings(rag_enabled: bool, similarity_threshold: float,
                             default_threshold: float) -> Tuple[bool, float]:
@@ -68,28 +68,39 @@ class UIComponents:
         """
         st.sidebar.subheader("🔍 RAG设置")
 
+        # 为滑块创建专用会话状态键
+        SLIDER_KEY = "rag_similarity_threshold_slider"
+
+        # 初始化会话状态
+        if SLIDER_KEY not in st.session_state:
+            st.session_state[SLIDER_KEY] = similarity_threshold
+
+        # 重置回调函数
+        def reset_threshold():
+            st.session_state[SLIDER_KEY] = default_threshold
+            st.toast("已重置相似度阈值", icon="🔄")
+
         new_rag_enabled = st.sidebar.checkbox(
             "📚 启用RAG文档检索",
             value=rag_enabled,
             help="启用检索增强生成功能，使用上传的文档增强回答"
         )
 
+        # 滑块绑定到专用会话状态键
         new_similarity_threshold = st.sidebar.slider(
             "🎯 相似度阈值",
             min_value=0.0,
             max_value=1.0,
-            value=similarity_threshold,
             step=0.05,
-            help="调整检索相似度阈值，值越高要求匹配度越精确"
+            help="调整检索相似度阈值，值越高要求匹配度越精确",
+            key=SLIDER_KEY  # 显式设置key以绑定状态
         )
-
-        # 重置相似度阈值按钮
-        if st.sidebar.button("🔄 重置相似度阈值", use_container_width=True):
-            new_similarity_threshold = default_threshold
-            st.toast("已重置相似度阈值", icon="🔄")
+        # 重置按钮 - 绑定回调函数
+        st.sidebar.button("🔄 重置相似度阈值", on_click=reset_threshold,
+                          use_container_width=True)
         return new_rag_enabled, new_similarity_threshold
 
-    # 3. 渲染聊天统计信息
+    # 渲染聊天统计信息
     @staticmethod
     def render_chat_stats(chat_history: ChatHistoryManager):
         """
@@ -133,7 +144,7 @@ class UIComponents:
         else:
             st.sidebar.warning("⚠️ 当前无可用文档索引")
 
-    # 4. 渲染文档上传组件
+    # 渲染文档上传组件
     @staticmethod
     def render_document_upload(
         document_processor: DocumentProcessor,
@@ -244,7 +255,7 @@ class UIComponents:
                     st.rerun()
             return new_doc_count, vector_store
 
-    # 5. 渲染聊天历史
+    # 渲染聊天历史
     @staticmethod
     def render_chat_history(chat_history: ChatHistoryManager):
         """
