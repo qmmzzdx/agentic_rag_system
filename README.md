@@ -1,4 +1,4 @@
-# Agentic RAG System 智能问答系统 🤖
+# Agentic RAG System 智能问答系统(Version 0.1) 🤖
 
 基于Qwen3和DeepSeek-R1的本地RAG(检索增强生成)智能问答系统，支持文档问答和天气查询功能，提供高效便捷的自然语言交互体验。
 
@@ -204,3 +204,4 @@ AVAILABLE_EMBEDDING_MODELS = [
     "bge-m3:latest",
 ]
 ```
+
