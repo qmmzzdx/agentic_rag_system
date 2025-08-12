@@ -106,8 +106,7 @@ class App:
                     f"⚠️ 嵌入模型已更改为 {st.session_state.embedding_model}，您可能需要重新处理文档以使用新的嵌入模型。")
 
         # 渲染向量存储状态
-        UIComponents.render_vector_store_status(
-            self.vector_store, st.session_state.doc_count)
+        UIComponents.render_vector_store_status(self.vector_store)
 
         # 渲染聊天统计
         UIComponents.render_chat_stats(self.chat_history)
@@ -265,15 +264,11 @@ class App:
         st.info("**DeepSeek-R1:** 由​​深度求索研发的高效检索模型，专为复杂推理任务优化。")
 
         # 渲染rag设置
-        if not self.vector_store.vector_store:
+        if not self.vector_store.vector_index:
             with st.spinner("🔍 加载文档索引..."):
                 if self.vector_store.load_vector_store():
-                    try:
-                        # 尝试获取文档数量
-                        st.session_state.doc_count = len(
-                            self.vector_store.vector_store.docstore._dict)
-                    except AttributeError:
-                        st.session_state.doc_count = 0
+                    # 获取文档数量
+                    st.session_state.doc_count = self.vector_store.get_doc_count()
 
         # 渲染侧边栏
         self.render_sidebar()

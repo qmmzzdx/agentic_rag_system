@@ -4,7 +4,6 @@ UI组件模块，包含所有Streamlit UI渲染逻辑
 import streamlit as st
 from datetime import datetime
 from typing import Tuple, List
-from langchain.schema import Document
 from utils.document_processor.doc_processor import DocumentProcessor
 from utils.knowledge_base.vector_store import VectorStoreService
 from utils.chat_record.chat_history import ChatHistoryManager
@@ -133,14 +132,11 @@ class UIComponents:
             st.rerun()
 
     @staticmethod
-    def render_vector_store_status(vector_store: VectorStoreService, doc_count: int = 0):
+    def render_vector_store_status(vector_store: VectorStoreService):
         """显示向量存储状态"""
-        if vector_store.vector_store:
-            try:
-                doc_count = len(vector_store.vector_store.docstore._dict)
-                st.sidebar.success(f"✅ 向量索引已加载 ({doc_count} 个文档块)")
-            except AttributeError:
-                st.sidebar.success("✅ 向量索引已加载")
+        if vector_store.vector_index:
+            doc_count = vector_store.get_doc_count()
+            st.sidebar.success(f"✅ 向量索引已加载 ({doc_count} 个文档块)")
         else:
             st.sidebar.warning("⚠️ 当前无可用文档索引")
 
@@ -162,7 +158,7 @@ class UIComponents:
             (新添加的文档块数量, 更新后的向量存储服务)
         """
         # 新添加的文档块数量
-        new_doc_count = 0
+        new_nodes_count = 0
 
         # 展开面板状态：当没有已处理文档时展开
         with st.expander("📁 上传RAG文档", expanded=not bool(processed_documents)):
@@ -174,7 +170,7 @@ class UIComponents:
                 accept_multiple_files=True
             )
 
-            new_docs = []
+            new_nodes = []
             # 处理上传的文件
             if uploaded_files and st.button("⚙️ 处理文档", key="process_docs"):
                 with st.spinner("🔧 正在处理文档..."):
@@ -184,20 +180,9 @@ class UIComponents:
                                 # 处理文件内容
                                 result = document_processor.process_file(
                                     uploaded_file.getvalue(), uploaded_file.name)
-
-                                if isinstance(result, list):
-                                    # 对于PDF文档块，直接使用
-                                    new_docs.extend(result)
-                                    new_doc_count += len(result)
-                                else:
-                                    # 对于TXT文档，创建Document对象
-                                    doc = Document(
-                                        page_content=result,
-                                        metadata={"source": uploaded_file.name}
-                                    )
-                                    new_docs.append(doc)
-                                    new_doc_count += 1
-
+                                # 添加到结果列表
+                                new_nodes.extend(result)
+                                new_nodes_count += len(result)
                                 processed_documents.append(uploaded_file.name)
                                 st.success(f"✅ 已处理: {uploaded_file.name}")
                             except Exception as e:
@@ -207,29 +192,25 @@ class UIComponents:
                             st.warning(f"⚠️ 已存在: {uploaded_file.name}")
 
                 # 构建向量索引
-                if new_docs:
+                if new_nodes:
                     with st.spinner("🧩 正在构建向量索引..."):
                         try:
-                            # 如果已有向量存储，添加到现有索引
-                            if vector_store.vector_store:
-                                vector_store.vector_store.add_documents(
-                                    new_docs)
-                                st.success(f"成功添加 {len(new_docs)} 个文档块到现有索引")
+                            # 如果已有索引，添加到现有索引
+                            if vector_store.vector_index:
+                                vector_store.add_documents(new_nodes)
+                                st.success(f"成功添加 {len(new_nodes)} 个文档块到现有索引")
                             else:
-                                # 否则创建新索引
-                                vector_store.vector_store = vector_store.create_vector_store(
-                                    new_docs)
+                                vector_store.create_vector_store(new_nodes)
                                 st.success("成功创建新文档索引")
                         except Exception as e:
                             st.error(f"❌ 构建索引失败: {str(e)}")
-                            return new_doc_count, vector_store
+                            return new_nodes_count, vector_store
 
                     # 保存向量索引
-                    if vector_store.vector_store:
+                    if vector_store.vector_index:
                         with st.spinner("💾 保存文档索引..."):
                             try:
-                                vector_store._save_vector_store(
-                                    vector_store.vector_store)
+                                vector_store._save_vector_store()
                                 st.success("✅ 文档索引保存成功！")
                                 st.rerun()
                             except Exception as e:
@@ -253,7 +234,7 @@ class UIComponents:
                         except Exception as e:
                             st.error(f"❌ 清除索引失败: {str(e)}")
                     st.rerun()
-            return new_doc_count, vector_store
+            return new_nodes_count, vector_store
 
     # 渲染聊天历史
     @staticmethod

@@ -92,7 +92,7 @@ agentic_rag_system/
 
 ### 1. 文档问答 (RAG模式)
 
-- **上传文档**：支持PDF、TXT、DOCX等多种格式文档  
+- **上传文档**：支持PDF、TXT等多种格式文档  
 - **自动处理**：系统自动处理文档并构建向量索引  
 - **智能提问**：询问与文档相关的问题  
 - **精准回答**：系统检索相关内容并生成准确回答  
@@ -176,9 +176,11 @@ TOOL_WEATHER = {
 
 ```python
 # 支持的文件类型和对应加载器
-SUPPORTED_EXTENSIONS: Dict[str, Type[BaseLoader]] = {
-    '.pdf': PyPDFLoader,   # PDF文档加载器
-    '.txt': TextLoader,    # TXT文件加载器
+EXTENSION_READER_MAP: Dict[str, Type] = {
+    # 文本类
+    '.txt': FlatReader,
+    # 文档类
+    '.pdf': PDFReader,
 }
 ```
 
@@ -204,4 +206,3 @@ AVAILABLE_EMBEDDING_MODELS = [
     "bge-m3:latest",
 ]
 ```
-
