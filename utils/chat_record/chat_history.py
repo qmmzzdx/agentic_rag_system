@@ -67,6 +67,8 @@ class ChatHistoryManager:
         try:
             with open(self.current_history_file, 'w', encoding='utf-8') as f:
                 json.dump(self.history, f, ensure_ascii=False, indent=4)
+            singleton_logger.info(
+                f"保存历史记录成功[{self.current_history_file}]")
         except Exception as e:
             singleton_logger.error(
                 f"保存历史记录失败[{self.current_history_file}]: {str(e)}")

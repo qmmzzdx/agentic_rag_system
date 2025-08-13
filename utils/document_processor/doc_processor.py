@@ -11,7 +11,7 @@ from utils.decorators import error_handler, log_execution
 from utils.logger.logger_manager import singleton_logger
 
 from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core.schema import BaseNode, TextNode
+from llama_index.core.schema import TextNode
 from llama_index.readers.file import PDFReader, FlatReader
 
 # 配置参数
@@ -104,7 +104,7 @@ class DocumentProcessor:
         cache_key = self._generate_cache_key(file_content)
         return self.cache_dir / f"{cache_key}.json"
 
-    def _load_from_cache(self, cache_path: Path) -> Optional[List[BaseNode]]:
+    def _load_from_cache(self, cache_path: Path) -> Optional[List[TextNode]]:
         """
         从缓存加载文档（如果存在且有效）
 
@@ -112,7 +112,7 @@ class DocumentProcessor:
             cache_path: 缓存文件路径
 
         Returns:
-            Optional[List[BaseNode]]: 文档列表或None
+            Optional[List[TextNode]]: 文档列表或None
         """
         if not cache_path.exists():
             singleton_logger.warning(f"缓存文件不存在: {cache_path}")
@@ -121,17 +121,16 @@ class DocumentProcessor:
         try:
             with cache_path.open('r', encoding='utf-8') as f:
                 nodes_data = json.load(f)
-                # 从字典直接创建BaseNode对象
+                # 从字典直接创建TextNode对象
                 nodes = [TextNode.from_dict(node_dict)
                          for node_dict in nodes_data]
-                node_count = len(nodes)
-                singleton_logger.info(f"成功从缓存加载 {node_count} 个文档块")
+                singleton_logger.info(f"成功从缓存加载 {len(nodes)} 个文档块")
                 return nodes
         except Exception as e:
             singleton_logger.warning(f"缓存加载失败（将重新生成）: {str(e)}")
             return None
 
-    def _save_to_cache(self, cache_path: Path, nodes: List[BaseNode]) -> bool:
+    def _save_to_cache(self, cache_path: Path, nodes: List[TextNode]) -> bool:
         """
         保存处理结果到缓存
 
@@ -158,7 +157,7 @@ class DocumentProcessor:
         self,
         file_content: bytes,
         file_extension: str
-    ) -> List[BaseNode]:
+    ) -> List[TextNode]:
         """
         使用指定加载器处理文档
 
@@ -171,7 +170,7 @@ class DocumentProcessor:
             file_extension: 文件扩展名（带点）
 
         Returns:
-            List[BaseNode]: 分块后的文档列表
+            List[TextNode]: 分块后的文档列表
         """
         # 获取缓存路径并检查缓存
         cache_path = self._get_cache_path(file_content)
@@ -225,7 +224,7 @@ class DocumentProcessor:
         self,
         file_content: bytes,
         file_name: str
-    ) -> List[BaseNode]:
+    ) -> List[TextNode]:
         """
         处理上传的文件（统一接口）
 
@@ -234,7 +233,7 @@ class DocumentProcessor:
             file_name: 完整文件名（带扩展名）
 
         Returns:
-            List[BaseNode]: 分块后的文档列表
+            List[TextNode]: 分块后的文档列表
 
         Raises:
             ValueError: 不支持的文件类型

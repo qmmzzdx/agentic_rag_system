@@ -6,7 +6,7 @@ from pathlib import Path
 from llama_index.core.embeddings import BaseEmbedding
 from llama_index.embeddings.ollama import OllamaEmbedding
 from llama_index.core.node_parser import SentenceSplitter
-from llama_index.core.schema import BaseNode
+from llama_index.core.schema import TextNode, NodeWithScore
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core.indices.vector_store import VectorIndexRetriever
 from llama_index.core import (
@@ -107,7 +107,7 @@ class VectorStoreService:
             return False
 
     @error_handler()
-    def create_vector_store(self, nodes: List[BaseNode]) -> Optional[VectorStoreIndex]:
+    def create_vector_store(self, nodes: List[TextNode]) -> Optional[VectorStoreIndex]:
         """
         创建全新的向量存储（覆盖现有索引）
 
@@ -118,25 +118,21 @@ class VectorStoreService:
             Optional[VectorStoreIndex]: 创建成功的向量索引实例，失败时返回None
         """
         if not nodes:
-            singleton_logger.warning("没有文档块可以创建向量存储")
+            singleton_logger.warning("当前暂无可创建向量存储的文档块")
             return None
 
         singleton_logger.info(f"开始创建向量存储，文档块数量: {len(nodes)}")
-
         try:
             # 创建存储上下文
             storage_context = StorageContext.from_defaults()
-
             # 使用文档块创建新索引
             self.vector_index = VectorStoreIndex(
                 nodes=nodes,
                 storage_context=storage_context,
                 show_progress=True
             )
-
             # 持久化保存索引
             self._save_vector_store()
-
             singleton_logger.info(f"向量存储创建成功，包含 {len(nodes)} 个文档块")
             return self.vector_index
         except Exception as e:
@@ -154,7 +150,6 @@ class VectorStoreService:
         try:
             # 确保存储目录存在
             self.index_dir.mkdir(parents=True, exist_ok=True)
-
             # 保存索引
             self.vector_index.storage_context.persist(
                 persist_dir=self.index_dir)
@@ -186,7 +181,7 @@ class VectorStoreService:
         return None
 
     @error_handler()
-    def search_documents(self, query: str, threshold: float = DEFAULT_SIMILARITY_THRESHOLD) -> List[BaseNode]:
+    def search_documents(self, query: str, threshold: float = DEFAULT_SIMILARITY_THRESHOLD) -> List[NodeWithScore]:
         """
         执行相似性搜索并返回文档块
 
@@ -195,7 +190,7 @@ class VectorStoreService:
             threshold: 相似度分数阈值（默认使用系统设置）
 
         Returns:
-            List[BaseNode]: 符合阈值条件的相关文档块列表
+            List[NodeWithScore]: 包含节点和相似度分数的列表
         """
         # 确保索引已加载
         if not self.vector_index:
@@ -228,7 +223,7 @@ class VectorStoreService:
             singleton_logger.error(f"搜索文档块失败: {str(e)}")
             return []
 
-    def get_context(self, nodes: List[BaseNode]) -> str:
+    def get_context(self, nodes: List[TextNode]) -> str:
         """
         将文档块列表合并为连续文本上下文
 
@@ -253,7 +248,7 @@ class VectorStoreService:
             singleton_logger.error(f"清除索引失败: {str(e)}")
             raise
 
-    def add_documents(self, nodes: List[BaseNode]):
+    def add_documents(self, nodes: List[TextNode]):
         """
         向现有索引添加新文档块
 

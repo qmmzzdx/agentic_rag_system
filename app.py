@@ -241,8 +241,7 @@ class App:
 
         # 添加检索到的文档（RAG模式下）
         if docs:
-            # 提取文档内容
-            doc_contents = [doc.page_content for doc in docs]
+            doc_contents = [doc.node.get_content() for doc in docs]
             self.chat_history.add_message("retrieved_doc", doc_contents)
 
     # 8. 应用主运行入口

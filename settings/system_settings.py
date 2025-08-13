@@ -26,7 +26,7 @@ AVAILABLE_EMBEDDING_MODELS = [
 ]
 
 # ---------------------- RAG 配置 ----------------------
-DEFAULT_SIMILARITY_THRESHOLD = 0.7  # 文档检索相似度阈值
+DEFAULT_SIMILARITY_THRESHOLD = 0.3  # 文档检索相似度阈值
 MAX_RETRIEVED_DOCS = 3              # 最大检索文档数量
 
 # ---------------------- 文本处理配置 ----------------------
