@@ -163,11 +163,12 @@ class UIComponents:
         # 展开面板状态：当没有已处理文档时展开
         with st.expander("📁 上传RAG文档", expanded=not bool(processed_documents)):
             # 文件上传器
-            st.info("📤 请上传PDF或TXT文件")
+            st.info("📤 请上传常见文档格式")
             uploaded_files = st.file_uploader(
                 "📄 上传文档",
-                type=["pdf", "txt"],
-                accept_multiple_files=True
+                type=["pdf", "csv", "md", "txt", "docx"],
+                accept_multiple_files=True,
+                help="支持办公文档、文本文件、表格数据等常见格式"
             )
 
             new_nodes = []

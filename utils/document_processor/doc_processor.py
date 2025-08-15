@@ -5,25 +5,17 @@ import hashlib
 import json
 import tempfile
 from pathlib import Path
-from typing import Dict, List, Type, Optional
+from typing import List, Optional
 
 from utils.decorators import error_handler, log_execution
 from utils.logger.logger_manager import singleton_logger
 
 from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.schema import TextNode
-from llama_index.readers.file import PDFReader, FlatReader
 
 # 配置参数
+from . import EXTENSION_READER_MAP
 from settings.system_settings import CHUNK_SIZE, CHUNK_OVERLAP
-
-# 自动映射扩展名到对应的读取器
-EXTENSION_READER_MAP: Dict[str, Type] = {
-    # 文本类
-    '.txt': FlatReader,
-    # 文档类
-    '.pdf': PDFReader,
-}
 
 
 class DocumentProcessor:

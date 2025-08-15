@@ -7,7 +7,6 @@ from typing import Optional, List
 from agno.agent import Agent
 from agno.models.ollama import Ollama
 from agno.tools.reasoning import ReasoningTools
-from agno.tools.function import Function
 from settings.system_settings import DEFAULT_MODEL
 from utils.logger.logger_manager import singleton_logger
 
@@ -65,37 +64,33 @@ class RAGAgent:
             # 恢复字节码生成设置
             sys.dont_write_bytecode = False
 
-    def _load_tools(self) -> List[Function]:
+    def _load_tools(self) -> List:
         """
-        动态加载工具配置
+        动态加载工具配置 - 专注于加载 TOOL_LISTS
 
         Returns:
-            List[Function]: 配置好的工具列表
+            List: 配置好的工具列表
         """
         tools_module = self._safe_import(self.tool_config)
         if not tools_module:
             singleton_logger.error(f"工具配置模块 {self.tool_config} 加载失败，使用默认工具")
             return [ReasoningTools(add_instructions=True)]
 
-        tools = []
-        # 加载所有以TOOL_开头的配置项
-        for attr_name in dir(tools_module):
-            if attr_name.startswith("TOOL_"):
-                tool_config = getattr(tools_module, attr_name)
+        # 确保存在 TOOL_LISTS
+        if not hasattr(tools_module, "TOOL_LISTS"):
+            singleton_logger.error(
+                f"模块 {self.tool_config} 中未找到 TOOL_LISTS，使用默认工具")
+            return [ReasoningTools(add_instructions=True)]
 
-                # 创建Function实例
-                tool = Function(
-                    name=tool_config["name"],
-                    description=tool_config["description"],
-                    parameters=tool_config.get("parameters", {}),
-                    entrypoint=tool_config["entrypoint"]
-                )
-                tools.append(tool)
+        # 获取 TOOL_LISTS 内容
+        tool_instances = getattr(tools_module, "TOOL_LISTS", [])
+        singleton_logger.info(
+            f"从 {self.tool_config} 加载了 {len(tool_instances)} 个工具实例")
 
         # 添加默认的推理工具
-        tools.append(ReasoningTools(add_instructions=True))
-        singleton_logger.info(f"已加载 {len(tools)} 个工具")
-        return tools
+        tool_instances.append(ReasoningTools(add_instructions=True))
+        singleton_logger.info(f"总共加载 {len(tool_instances)} 个工具")
+        return tool_instances
 
     def _load_instructions(self) -> str:
         """

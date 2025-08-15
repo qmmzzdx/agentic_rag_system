@@ -2,7 +2,8 @@
 天气查询工具 - 基于高德地图API实现天气查询功能
 """
 import requests
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple, List
+from agno.tools import Toolkit
 from utils.logger.logger_manager import singleton_logger
 
 # 导入配置项
@@ -206,12 +207,12 @@ class WeatherService:
         return "\n".join(result)
 
 
-class WeatherTools:
+class WeatherTool(Toolkit):
     """
     天气查询工具类 - 提供简化的天气查询接口
     """
 
-    def __init__(self, api_key: str = AMAP_API_KEY):
+    def __init__(self, api_key: str = AMAP_API_KEY, **kwargs):
         """
         初始化天气工具
 
@@ -219,7 +220,10 @@ class WeatherTools:
             api_key: 高德地图API密钥，默认为配置中的密钥
         """
         self.weather_service = WeatherService(api_key)
-        singleton_logger.info("天气查询工具初始化成功")
+        # 初始化工具列表，添加查询天气工具
+        tools: List[Any] = [self.query_weather]
+        super().__init__(name="weather_tool", tools=tools, **kwargs)
+        singleton_logger.info("天气查询工具初始化完成")
 
     def query_weather(self, city: str) -> str:
         """

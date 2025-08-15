@@ -146,41 +146,34 @@ agentic_rag_system/
 
 ### 1. 添加新工具
 
-参考`weather_tool.py`实现新工具，在`agent_tools_select.py`中添加：
+参考`agent_tools_select.py`实现新工具，在`agent_tools_select.py`中添加类：
 
 ```python
-# 天气查询工具
-TOOL_WEATHER = {
-    "name": "query_weather",
-    "description": "查询指定城市的天气预报",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "city": {
-                "type": "string",
-                "description": "要查询的城市名称"
-            }
-        },
-        "required": ["city"]
-    },
-    "entrypoint": WeatherTools(AMAP_API_KEY).query_weather
-}
-
-# 可以继续添加其他工具...
-# TOOL_CALCULATOR = {...}
+# 工具列表，包含所有可用的工具实例
+# 用于在agent中统一管理和调用各种工具
+TOOL_LISTS = [
+    MathTool(),      # 数学计算工具实例
+    WeatherTool()    # 天气查询工具实例
+]
 ```
 
 ### 2. 支持新文档格式
 
-在`doc_processor.py`中添加新的文档加载器：
+在`./utils/document_processor/__init__.py`中添加新的文档加载器：
 
 ```python
-# 支持的文件类型和对应加载器
+# 自动映射扩展名到对应的读取器
 EXTENSION_READER_MAP: Dict[str, Type] = {
     # 文本类
     '.txt': FlatReader,
+    # csv类
+    '.csv': CSVReader,
+    # markdown类
+    '.md': MarkdownReader,
+    # docx类
+    '.docx': DocxReader,
     # 文档类
-    '.pdf': PDFReader,
+    '.pdf': OCRPDFReader
 }
 ```
 

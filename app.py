@@ -292,12 +292,12 @@ class App:
         # 设置模式描述
         mode_description = ""
         if st.session_state.rag_enabled:
-            mode_description += "📚 RAG模式：可以询问上传文档的内容。"
+            st.info("📚 RAG模式：可以询问上传文档的内容。")
         else:
-            mode_description += "💬 对话模式：直接与模型交流。"
+            st.info("💬 对话模式：直接与模型交流。")
 
         mode_description += " 🌤️ 天气查询：可以询问任何城市的天气情况。"
-
+        mode_description += " 🧮 数值计算：支持复杂数学表达式计算。"
         # 显示模式描述
         st.info(mode_description)
 

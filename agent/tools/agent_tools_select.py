@@ -1,25 +1,11 @@
-"""
-工具配置 - 定义智能体可使用的各种工具
-"""
-from agent.tools.weather_tool import WeatherTools
-from settings.system_settings import AMAP_API_KEY
+# 导入数学计算工具类
+from .math_tool import MathTool
+# 导入天气查询工具类
+from .weather_tool import WeatherTool
 
-# 天气查询工具
-TOOL_WEATHER = {
-    "name": "query_weather",
-    "description": "查询指定城市的天气预报",
-    "parameters": {
-        "type": "object",
-        "properties": {
-            "city": {
-                "type": "string",
-                "description": "要查询的城市名称"
-            }
-        },
-        "required": ["city"]
-    },
-    "entrypoint": WeatherTools(AMAP_API_KEY).query_weather
-}
-
-# 可以继续添加其他工具...
-# TOOL_CALCULATOR = {...}
+# 工具列表，包含所有可用的工具实例
+# 用于在agent中统一管理和调用各种工具
+TOOL_LISTS = [
+    MathTool(),      # 数学计算工具实例
+    WeatherTool()    # 天气查询工具实例
+]
